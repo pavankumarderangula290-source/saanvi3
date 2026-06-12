@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Portal Login - Saanvi International School</title>
+  <link rel="stylesheet" href="portal.css">
+</head>
+<body class="portal-page">
+
+  <header class="portal-header">
+    <a href="index.html" class="portal-logo">
+      <img src="images/logo.jpg" alt="Logo" width="40" height="40">
+      Saanvi International
+    </a>
+    <a href="index.html" class="btn btn-outline">&larr; Back to Website</a>
+  </header>
+
+  <main class="portal-main">
+    <div class="login-container">
+      <div class="login-header">
+        <h1>Welcome Back</h1>
+        <p>Sign in to the school management portal</p>
+      </div>
+
+      <div class="login-tabs">
+        <div class="login-tab active" data-target="student-login">Student Login</div>
+        <div class="login-tab" data-target="staff-login">Staff Login</div>
+        <div class="login-tab" data-target="admin-login">Admin Login</div>
+      </div>
+
+      <div class="login-form-container">
+        
+        <!-- Student Login Form -->
+        <form id="student-login" class="login-form active">
+          <div id="student-alert" class="alert"></div>
+          <div class="form-group">
+            <label class="form-label">Student ID</label>
+            <input type="text" id="student-id" class="form-control" placeholder="e.g. STU123456" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Passcode</label>
+            <input type="password" id="student-passcode" class="form-control" placeholder="Enter your passcode" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">View Performance</button>
+        </form>
+
+        <!-- Staff Login Form -->
+        <form id="staff-login" class="login-form">
+          <div id="staff-alert" class="alert"></div>
+          <div class="form-group">
+            <label class="form-label">Secure Passcode</label>
+            <input type="password" id="staff-passcode" class="form-control" placeholder="Enter your passcode" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Access Dashboard</button>
+        </form>
+
+        <!-- Admin Login Form -->
+        <form id="admin-login" class="login-form">
+          <div id="admin-alert" class="alert"></div>
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" id="admin-user" class="form-control" placeholder="Admin username" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="admin-pass" class="form-control" placeholder="Admin password" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Login as Admin</button>
+        </form>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="portal.js"></script>
+  <script>
+    // If already logged in, redirect
+    const session = sessionManager.getSession();
+    if (session) {
+      if (session.type === 'admin') window.location.href = 'admin.html';
+      else if (session.type === 'staff') window.location.href = 'staff-dashboard.html';
+      else window.location.href = 'student-dashboard.html';
+    }
+
+    // Tab Switching
+    document.querySelectorAll('.login-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+        
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.target).classList.add('active');
+      });
+    });
+
+    // Student Login
+    document.getElementById('student-login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const stId = document.getElementById('student-id').value;
+      const code = document.getElementById('student-passcode').value;
+      const student = await studentApi.verifyLogin(stId, code);
+      if (student) {
+        sessionManager.createSession('student', student.id);
+        window.location.href = 'student-dashboard.html';
+      } else {
+        showAlert('student-alert', 'Invalid Student ID or passcode.');
+      }
+    });
+
+    // Staff Login
+    document.getElementById('staff-login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = document.getElementById('staff-passcode').value;
+      const staff = await staffApi.verifyLogin(code);
+      if (staff) {
+        sessionManager.createSession('staff', staff.id);
+        window.location.href = 'staff-dashboard.html';
+      } else {
+        showAlert('staff-alert', 'Invalid passcode. Please try again.');
+      }
+    });
+
+    // Admin Login
+    document.getElementById('admin-login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user = document.getElementById('admin-user').value;
+      const pass = document.getElementById('admin-pass').value;
+      
+      const success = await adminApi.verifyLogin(user, pass);
+      if (success) {
+        sessionManager.createSession('admin', 'admin');
+        window.location.href = 'admin.html';
+      } else {
+        showAlert('admin-alert', 'Invalid admin credentials.');
+      }
+    });
+  </script>
+</body>
+</html>

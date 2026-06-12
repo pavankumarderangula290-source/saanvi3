@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Dashboard - Saanvi International School</title>
+  <link rel="stylesheet" href="portal.css">
+  <style>
+    .dashboard-tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--portal-border); }
+    .dash-tab { padding: 0.5rem 1rem; cursor: pointer; color: var(--portal-muted); font-weight: 500; border-bottom: 2px solid transparent; }
+    .dash-tab.active { color: var(--portal-primary); border-bottom-color: var(--portal-primary); }
+    .dash-section { display: none; }
+    .dash-section.active { display: block; }
+  </style>
+</head>
+<body class="portal-page">
+
+  <header class="portal-header">
+    <div class="portal-logo">
+      <img src="images/logo.jpg" alt="Logo" width="40" height="40">
+      Staff Dashboard
+    </div>
+    <div class="portal-nav">
+      <button onclick="openPasswordModal()" class="btn btn-outline">Change Passcode</button>
+      <button onclick="sessionManager.clearSession()" class="btn btn-outline">Logout</button>
+    </div>
+  </header>
+
+  <main class="portal-main">
+    <div class="dashboard-header">
+      <div>
+        <h1 id="welcome-message">Welcome back</h1>
+        <p style="color: var(--portal-muted);" id="role-message">Manage your tasks and students</p>
+      </div>
+    </div>
+
+    <div class="dashboard-grid has-sidebar">
+      <!-- Main Content -->
+      <div>
+        <div class="dashboard-tabs">
+          <div class="dash-tab active" onclick="switchTab('tasks')">My Tasks</div>
+          <div class="dash-tab" onclick="switchTab('students')">My Students</div>
+        </div>
+
+        <div id="tasks-section" class="dash-section active">
+          <div class="portal-card">
+            <div class="card-header">
+              <h3>Assigned Tasks</h3>
+            </div>
+            <div id="tasks-container">
+              <!-- Tasks rendered here -->
+            </div>
+          </div>
+        </div>
+
+        <div id="students-section" class="dash-section">
+          <div class="portal-card">
+            <div class="card-header">
+              <h3>Student Roster</h3>
+              <button onclick="openAddStudentModal()" class="btn btn-primary" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;">+ Add Student</button>
+            </div>
+            <div class="table-responsive">
+              <table class="portal-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Class</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="students-table-body">
+                  <!-- Students rendered here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div>
+        <div class="portal-card" style="background: #f8fafc;">
+          <h3>My Profile</h3>
+          <div style="margin-top: 1rem; color: var(--portal-muted); font-size: 0.875rem;">
+            <p style="margin-bottom: 0.5rem"><strong>ID:</strong> <span id="profile-id"></span></p>
+            <p style="margin-bottom: 0.5rem"><strong>Role:</strong> <span id="profile-role"></span></p>
+            <p><strong>Class:</strong> <span id="profile-class"></span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Student Modal -->
+  <div id="add-student-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add New Student</h3>
+        <button class="modal-close" onclick="closeModal('add-student-modal')">&times;</button>
+      </div>
+      <form id="add-student-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" id="student-name" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Class</label>
+            <input type="text" id="student-class" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Initial Passcode</label>
+            <input type="text" id="student-pass" class="form-control" required value="1234">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('add-student-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Marks Modal -->
+  <div id="add-marks-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add Marks for <span id="marks-student-name"></span></h3>
+        <button class="modal-close" onclick="closeModal('add-marks-modal')">&times;</button>
+      </div>
+      <form id="add-marks-form">
+        <input type="hidden" id="marks-student-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Exam Name</label>
+            <input type="text" id="exam-name" class="form-control" placeholder="e.g. Unit Test 1" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input type="text" id="exam-subject" class="form-control" required>
+          </div>
+          <div style="display: flex; gap: 1rem;">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Marks Obtained</label>
+              <input type="number" id="exam-marks" class="form-control" required>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Maximum Marks</label>
+              <input type="number" id="exam-max" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Remarks / Grade</label>
+            <input type="text" id="exam-remarks" class="form-control" placeholder="e.g. Excellent / Grade A">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('add-marks-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Marks</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Password Change Modal -->
+  <div id="password-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="pwd-modal-title">Change Passcode</h3>
+        <button class="modal-close" id="pwd-close-btn" onclick="closeModal('password-modal')">&times;</button>
+      </div>
+      <form id="password-form">
+        <div class="modal-body">
+          <div id="password-alert" class="alert alert-error">Please change your default passcode before continuing.</div>
+          <div class="form-group">
+            <label class="form-label">New Passcode</label>
+            <input type="password" id="new-passcode" class="form-control" required minlength="4">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm New Passcode</label>
+            <input type="password" id="confirm-passcode" class="form-control" required minlength="4">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="pwd-cancel-btn" onclick="closeModal('password-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Passcode</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="portal.js"></script>
+  <script>
+    // Protect page
+    const session = sessionManager.requireAuth('staff');
+    let staffProfile = null;
+
+    function switchTab(tab) {
+      document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.dash-section').forEach(s => s.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tab + '-section').classList.add('active');
+    }
+
+    async function loadData() {
+      staffProfile = await staffApi.getProfile(session.id);
+      
+      // Update Profile UI
+      document.getElementById('welcome-message').textContent = `Welcome, ${staffProfile.name}`;
+      document.getElementById('profile-id').textContent = staffProfile.id;
+      document.getElementById('profile-role').textContent = staffProfile.role;
+      document.getElementById('profile-class').textContent = staffProfile.classAssigned;
+
+      // Render Tasks
+      const tasksContainer = document.getElementById('tasks-container');
+      if (staffProfile.tasks.length === 0) {
+        tasksContainer.innerHTML = `<p style="text-align: center; color: var(--portal-muted); padding: 2rem 0;">You have no assigned tasks.</p>`;
+      } else {
+        const sortedTasks = [...staffProfile.tasks].sort((a, b) => {
+          if (a.status === 'completed' && b.status !== 'completed') return 1;
+          if (a.status !== 'completed' && b.status === 'completed') return -1;
+          return new Date(b.assignedDate) - new Date(a.assignedDate);
+        });
+
+        tasksContainer.innerHTML = sortedTasks.map(t => {
+          let badgeClass = 'badge-pending';
+          let statusText = 'Pending';
+          if (t.status === 'in-progress') { badgeClass = 'badge-progress'; statusText = 'In Progress'; }
+          if (t.status === 'completed') { badgeClass = 'badge-completed'; statusText = 'Completed'; }
+
+          return `
+            <div class="task-item" style="${t.status === 'completed' ? 'opacity: 0.7; background: #f8fafc;' : ''}">
+              <div class="task-info">
+                <h4>${t.description}</h4>
+                <div class="task-meta">
+                  <span>Assigned: ${t.assignedDate}</span>
+                  <span>Deadline: <strong style="color: ${new Date(t.deadline) < new Date() && t.status !== 'completed' ? 'var(--portal-danger)' : 'inherit'}">${t.deadline}</strong></span>
+                  <span class="badge ${badgeClass}">${statusText}</span>
+                </div>
+              </div>
+              <div class="task-actions">
+                <select class="form-control" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; width: auto;" onchange="updateStatus('${t.id}', this.value)">
+                  <option value="pending" ${t.status === 'pending' ? 'selected' : ''}>Pending</option>
+                  <option value="in-progress" ${t.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
+                  <option value="completed" ${t.status === 'completed' ? 'selected' : ''}>Completed</option>
+                </select>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Students
+      const students = await staffApi.getStudents() || [];
+      const tbody = document.getElementById('students-table-body');
+      
+      if (students.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--portal-muted);">No students found. Click "Add Student" to begin.</td></tr>`;
+      } else {
+        tbody.innerHTML = students.map(s => `
+          <tr>
+            <td><strong>${s.id}</strong></td>
+            <td>${s.name}</td>
+            <td>${s.class}</td>
+            <td>
+              <button onclick="openMarksModal('${s.id}', '${s.name}')" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">+ Add Marks</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // Check first login
+      if (staffProfile.isFirstLogin) {
+        document.getElementById('password-alert').style.display = 'block';
+        document.getElementById('pwd-cancel-btn').style.display = 'none';
+        document.getElementById('pwd-close-btn').style.display = 'none';
+        openModal('password-modal');
+      }
+    }
+
+    async function updateStatus(taskId, newStatus) {
+      await staffApi.updateTaskStatus(taskId, newStatus);
+      loadData();
+    }
+
+    // Modal Utils
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    // Student Modal
+    function openAddStudentModal() {
+      document.getElementById('add-student-form').reset();
+      openModal('add-student-modal');
+    }
+
+    document.getElementById('add-student-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await staffApi.addStudent({
+        name: document.getElementById('student-name').value,
+        class: document.getElementById('student-class').value,
+        passcode: document.getElementById('student-pass').value
+      });
+      closeModal('add-student-modal');
+      loadData();
+    });
+
+    // Marks Modal
+    function openMarksModal(id, name) {
+      document.getElementById('add-marks-form').reset();
+      document.getElementById('marks-student-id').value = id;
+      document.getElementById('marks-student-name').textContent = name;
+      openModal('add-marks-modal');
+    }
+
+    document.getElementById('add-marks-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('marks-student-id').value;
+      await staffApi.addExamMarks(id, {
+        examName: document.getElementById('exam-name').value,
+        subject: document.getElementById('exam-subject').value,
+        marksObtained: document.getElementById('exam-marks').value,
+        totalMarks: document.getElementById('exam-max').value,
+        remarks: document.getElementById('exam-remarks').value
+      });
+      closeModal('add-marks-modal');
+      alert('Marks added successfully!');
+      loadData();
+    });
+
+    // Password Modal
+    function openPasswordModal() {
+      document.getElementById('password-form').reset();
+      document.getElementById('password-alert').style.display = 'none';
+      document.getElementById('pwd-cancel-btn').style.display = 'inline-block';
+      document.getElementById('pwd-close-btn').style.display = 'block';
+      openModal('password-modal');
+    }
+
+    document.getElementById('password-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const p1 = document.getElementById('new-passcode').value;
+      const p2 = document.getElementById('confirm-passcode').value;
+      if (p1 !== p2) {
+        const alert = document.getElementById('password-alert');
+        alert.textContent = "Passcodes do not match!";
+        alert.className = "alert alert-error";
+        alert.style.display = 'block';
+        return;
+      }
+      await staffApi.updatePasscode(staffProfile.id, p1);
+      closeModal('password-modal');
+      loadData(); 
+      alert("Passcode updated successfully!");
+    });
+
+    // Initial Load
+    loadData();
+  </script>
+</body>
+</html>
