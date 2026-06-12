@@ -157,7 +157,7 @@ def add_student():
     passcode = data.get('passcode', '1234')
     conn = get_db_connection()
     conn.execute('INSERT INTO students (id, name, class, section, passcode, isFirstLogin) VALUES (?, ?, ?, ?, ?, ?)',
-                 (student_id, data['name'], data['class'], data['section'], passcode, 1))
+                 (student_id, data['name'], data['class'], data.get('section', 'A'), passcode, 1))
     conn.commit()
     conn.close()
     return jsonify({"success": True, "id": student_id})
